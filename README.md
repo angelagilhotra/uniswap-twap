@@ -1,3 +1,27 @@
+## Usage
+```bash
+$ ALCHEMY_MAINNET=https://eth-mainnet.alchemyapi.io/v2/<KEY> npx hardhat node
+```
+(will run forked mainnet from block number 13973932)
+
+```bash
+$ npx ts-node scripts/configureUniswapV3PriceFeeds.ts --token ETH/USDT --twap 20
+```
+output:
+```bash
+{
+  initial: '3189.1167',
+  configured: [ 0, 10, 20, 30, 5, 0 ],
+  bumpingTick: [
+    '3189.1167',
+    '3192.3073',
+    '3195.501',
+    '3198.698',
+    '3190.7116',
+    '3189.1167'
+  ]
+}
+```
 # Advanced Sample Hardhat Project
 
 This project demonstrates an advanced Hardhat use case, integrating other tools commonly used alongside Hardhat in the ecosystem.

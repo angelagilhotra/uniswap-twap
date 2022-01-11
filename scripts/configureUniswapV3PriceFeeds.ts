@@ -101,14 +101,11 @@ const getDecimals = (address: string): Promise<number> =>
     provider
   ).decimals();
 
-const getPriceFromOracle = async (
-  poolConfig: any,
-  twap: number
-): Promise<string> => {
+const getPrices = async (poolConfig: any, twap: number): Promise<any> => {
   const poolAdress = poolConfig.address;
   const contract = getPoolContract(poolAdress);
   const state = await getPoolState(contract);
-  const immuatables = await getPoolImmutables(contract);
+  const immutables = await getPoolImmutables(contract);
 
   let tick: number | undefined;
   if (twap === 0) {
@@ -121,14 +118,30 @@ const getPriceFromOracle = async (
 
   if (tick === undefined) throw new Error("Unable to create tick");
 
-  const token0Decimals = await getDecimals(immuatables.token0);
-  const token1Decimals = await getDecimals(immuatables.token1);
-  const token0 = new Token(1, immuatables.token0, token0Decimals);
-  const token1 = new Token(1, immuatables.token1, token1Decimals);
+  const token0Decimals = await getDecimals(immutables.token0);
+  const token1Decimals = await getDecimals(immutables.token1);
+  const token0 = new Token(1, immutables.token0, token0Decimals);
+  const token1 = new Token(1, immutables.token1, token1Decimals);
 
-  const price = tickToPrice(token0, token1, tick).toSignificant(8);
+  const initial = tickToPrice(token0, token1, tick).toSignificant(8);
 
-  return price;
+  const configured = Object.keys(poolConfig.pricePerBlock).map(
+    (block) => poolConfig.pricePerBlock[block]
+  );
+
+  const bumpingTick = Object.keys(poolConfig.pricePerBlock).map((block) =>
+    tickToPrice(
+      token0,
+      token1,
+      tick + poolConfig.pricePerBlock[block]
+    ).toSignificant(8)
+  );
+
+  return {
+    initial,
+    configured,
+    bumpingTick,
+  };
 };
 
 const main = async () => {
@@ -147,8 +160,8 @@ const main = async () => {
   const poolConfig = config.find((o) => o.name === tokenPair);
   if (!poolConfig) throw new Error("Config for pair not found");
 
-  const price = await getPriceFromOracle(poolConfig, twap);
-  console.log("price:", price);
+  const price = await getPrices(poolConfig, twap);
+  console.log(price);
 };
 
 main().catch((e) => {
